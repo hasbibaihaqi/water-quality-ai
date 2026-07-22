@@ -1,0 +1,42 @@
+{
+  "model_name": "XGBoost",
+  "optimal_threshold": 0.32,
+  "features": [
+    "ph",
+    "Hardness",
+    "Solids",
+    "Chloramines",
+    "Sulfate",
+    "Conductivity",
+    "Organic_carbon",
+    "Trihalomethanes",
+    "Turbidity"
+  ],
+  "feature_importances": {
+    "ph": 0.12985311448574066,
+    "Chloramines": 0.12943381071090698,
+    "Solids": 0.12127091735601425,
+    "Sulfate": 0.12014780938625336,
+    "Hardness": 0.11875682324171066,
+    "Organic_carbon": 0.09934630244970322,
+    "Turbidity": 0.09933764487504959,
+    "Trihalomethanes": 0.09096790850162506,
+    "Conductivity": 0.09088567644357681
+  },
+  "dataset_size": 3276,
+  "evaluation": {
+    "test_accuracy": 0.5457,
+    "precision": 0.4516,
+    "recall": 0.7656,
+    "f1_score": 0.5681,
+    "roc_auc": 0.659
+  },
+  "preprocessing": {
+    "missing_value_strategy": "KNNImputer (k=5)",
+    "outlier_handling": "IQR Capping",
+    "oversampling": "ADASYN",
+    "scaling": "StandardScaler",
+    "class_weight": "balanced"
+  },
+  "training_date": "2026-07-22 23:22:34"
+}

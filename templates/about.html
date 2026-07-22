@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Tentang Aplikasi{% endblock %}
+{% block meta_description %}Informasi lengkap tentang aplikasi, dataset, algoritma Machine Learning, dan evaluasi model prediksi kelayakan air minum.{% endblock %}
+
+{% block content %}
+<section class="about-section">
+  <div class="container">
+
+    <!-- Page Header -->
+    <div class="page-header reveal">
+      <div class="section-badge">Dokumentasi Proyek</div>
+      <h1>Tentang <span class="text-gradient">Water Quality AI</span></h1>
+      <p>Proyek UAS Mata Kuliah Kecerdasan Buatan &mdash; Prediksi Kelayakan Air Minum</p>
+    </div>
+
+    <!-- ===== MODEL PERFORMANCE ===== -->
+    <div class="row g-3 mb-5 reveal">
+      {% set eval = model_info.evaluation %}
+      {% set metrics = [
+        ('Test Accuracy', (eval.test_accuracy * 100) | round(2) if eval.test_accuracy else 'N/A', '%', 'bi-bullseye'),
+        ('Precision', (eval.precision * 100) | round(2) if eval.precision else 'N/A', '%', 'bi-filter'),
+        ('Recall', (eval.recall * 100) | round(2) if eval.recall else 'N/A', '%', 'bi-search'),
+        ('F1 Score', (eval.f1_score * 100) | round(2) if eval.f1_score else 'N/A', '%', 'bi-bar-chart'),
+        ('ROC AUC', (eval.roc_auc * 100) | round(2) if eval.roc_auc else 'N/A', '%', 'bi-graph-up-arrow'),
+        ('Training Samples', model_info.train_size_after_smote if model_info.train_size_after_smote else '3,196', '', 'bi-database')
+      ] %}
+      {% for label, value, unit, icon in metrics %}
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="metric-card">
+          <i class="bi {{ icon }}" style="font-size:1.3rem;color:var(--primary);margin-bottom:6px;display:block;"></i>
+          <div class="metric-value">{{ value }}{{ unit }}</div>
+          <div class="metric-label">{{ label }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- ===== MODEL COMPARISON TABLE ===== -->
+    <div class="mb-5 reveal">
+      <div class="text-center mb-4">
+        <div class="section-badge">Eksperimen ML</div>
+        <h2 class="section-title">Perbandingan 8 Algoritma ML</h2>
+        <p class="section-subtitle mx-auto">
+          Semua algoritma dilatih dengan SMOTE oversampling dan StandardScaler. 
+          Model terbaik dipilih berdasarkan F1 Score.
+        </p>
+      </div>
+
+      <div class="glass-card">
+        <div class="glass-card-inner p-0">
+          <div class="table-responsive">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Algoritma</th>
+                  <th>Train Acc</th>
+                  <th>Test Acc</th>
+                  <th>Precision</th>
+                  <th>Recall</th>
+                  <th>F1</th>
+                  <th>ROC AUC</th>
+                  <th>CV F1</th>
+                  <th>Waktu</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% set best_name = model_info.model_name %}
+                {% for row in model_info.all_models_comparison %}
+                <tr class="{{ 'best-row' if row.model == best_name else '' }}">
+                  <td>
+                    {{ row.model }}
+                    {% if row.model == best_name %}
+                      <span class="best-badge"><i class="bi bi-trophy-fill"></i> Best</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ (row.train_accuracy * 100) | round(2) }}%</td>
+                  <td>{{ (row.test_accuracy * 100) | round(2) }}%</td>
+                  <td>{{ (row.precision * 100) | round(2) }}%</td>
+                  <td>{{ (row.recall * 100) | round(2) }}%</td>
+                  <td style="font-weight:{% if row.model == best_name %}700{% else %}400{% endif %}">
+                    {{ (row.f1_score * 100) | round(2) }}%
+                  </td>
+                  <td>{{ (row.roc_auc * 100) | round(2) }}%</td>
+                  <td>{{ (row.cv_f1_mean * 100) | round(2) }}% ± {{ (row.cv_f1_std * 100) | round(2) }}</td>
+                  <td>{{ row.training_time }}s</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-muted);">
+                  Data perbandingan belum tersedia. Jalankan training.py terlebih dahulu.
+                </td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Keterangan Tabel -->
+      <div class="mt-3 d-flex flex-wrap gap-3">
+        <div style="font-size:0.78rem;color:var(--text-muted);">
+          <i class="bi bi-circle-fill me-1" style="color:rgba(0,212,255,0.4);font-size:8px;"></i>
+          Sorot biru = Model terbaik yang digunakan
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted);">
+          <i class="bi bi-info-circle me-1" style="color:var(--primary);"></i>
+          CV F1 = Cross Validation F1 Score (5-fold StratifiedKFold) pada data training SMOTE
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- ===== VISUALISASI EDA ===== -->
+    <div class="mb-5 reveal">
+      <div class="text-center mb-4">
+        <div class="section-badge">Exploratory Data Analysis</div>
+        <h2 class="section-title">Visualisasi Dataset</h2>
+        <p class="section-subtitle mx-auto">
+          Analisis mendalam dataset kualitas air minum melalui berbagai visualisasi statistik.
+        </p>
+      </div>
+
+      <div class="row g-4">
+        <!-- Target Distribution -->
+        <div class="col-md-6 col-lg-3">
+          <div class="glass-card h-100">
+            <div class="glass-card-inner text-center">
+              <h6 style="font-weight:700;margin-bottom:0.5rem;font-size:0.875rem;">Distribusi Target</h6>
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;">Layak vs Tidak Layak</p>
+              <img src="{{ url_for('static', filename='images/target_distribution.png') }}"
+                   alt="Distribusi Kelayakan Air"
+                   class="img-fluid rounded"
+                   style="border-radius:12px;"
+                   onerror="this.parentElement.innerHTML+='<p style=color:var(--text-muted);font-size:0.8rem;>Jalankan training.py</p>'">
+            </div>
+          </div>
+        </div>
+        <!-- Confusion Matrix -->
+        <div class="col-md-6 col-lg-3">
+          <div class="glass-card h-100">
+            <div class="glass-card-inner text-center">
+              <h6 style="font-weight:700;margin-bottom:0.5rem;font-size:0.875rem;">Confusion Matrix</h6>
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;">Evaluasi Model Final</p>
+              <img src="{{ url_for('static', filename='images/confusion_matrix.png') }}"
+                   alt="Confusion Matrix"
+                   class="img-fluid rounded"
+                   style="border-radius:12px;"
+                   onerror="this.parentElement.innerHTML+='<p style=color:var(--text-muted);font-size:0.8rem;>Jalankan training.py</p>'">
+            </div>
+          </div>
+        </div>
+        <!-- ROC Curve -->
+        <div class="col-md-6 col-lg-3">
+          <div class="glass-card h-100">
+            <div class="glass-card-inner text-center">
+              <h6 style="font-weight:700;margin-bottom:0.5rem;font-size:0.875rem;">ROC Curve</h6>
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;">Semua Model</p>
+              <img src="{{ url_for('static', filename='images/roc_curve.png') }}"
+                   alt="ROC Curve"
+                   class="img-fluid rounded"
+                   style="border-radius:12px;"
+                   onerror="this.parentElement.innerHTML+='<p style=color:var(--text-muted);font-size:0.8rem;>Jalankan training.py</p>'">
+            </div>
+          </div>
+        </div>
+        <!-- Correlation Heatmap -->
+        <div class="col-md-6 col-lg-3">
+          <div class="glass-card h-100">
+            <div class="glass-card-inner text-center">
+              <h6 style="font-weight:700;margin-bottom:0.5rem;font-size:0.875rem;">Heatmap Korelasi</h6>
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;">Antar Fitur</p>
+              <img src="{{ url_for('static', filename='images/correlation_heatmap.png') }}"
+                   alt="Heatmap Korelasi"
+                   class="img-fluid rounded"
+                   style="border-radius:12px;"
+                   onerror="this.parentElement.innerHTML+='<p style=color:var(--text-muted);font-size:0.8rem;>Jalankan training.py</p>'">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Importance Chart (wide) -->
+      <div class="glass-card mt-4">
+        <div class="glass-card-inner text-center">
+          <h6 style="font-weight:700;margin-bottom:0.5rem;">Feature Importance</h6>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;">Analisis Fitur yang Paling Mempengaruhi Kelayakan Air</p>
+          <img src="{{ url_for('static', filename='images/feature_importance.png') }}"
+               alt="Feature Importance"
+               class="img-fluid rounded"
+               style="border-radius:12px;max-width:900px;"
+               onerror="this.parentElement.innerHTML+='<p style=color:var(--text-muted);>Jalankan training.py untuk menghasilkan grafik ini.</p>'">
+        </div>
+      </div>
+
+      <!-- Model Comparison Chart (wide) -->
+      <div class="glass-card mt-4">
+        <div class="glass-card-inner text-center">
+          <h6 style="font-weight:700;margin-bottom:0.5rem;">Grafik Perbandingan Model</h6>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;">Accuracy, F1, Precision & Recall</p>
+          <img src="{{ url_for('static', filename='images/model_comparison.png') }}"
+               alt="Perbandingan Model"
+               class="img-fluid rounded"
+               style="border-radius:12px;max-width:900px;"
+               onerror="this.parentElement.innerHTML+='<p style=color:var(--text-muted);>Jalankan training.py untuk menghasilkan grafik ini.</p>'">
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- ===== PREPROCESSING PIPELINE ===== -->
+    <div class="row g-4 mb-5 reveal">
+      <div class="col-lg-6">
+        <div class="section-badge">Pipeline</div>
+        <h2 class="section-title">Preprocessing Pipeline</h2>
+        <p style="color:var(--text-secondary);font-size:0.95rem;line-height:1.7;margin-bottom:2rem;">
+          Data preprocessing yang komprehensif untuk menghasilkan data bersih 
+          dan model yang akurat.
+        </p>
+
+        {% set pipeline_steps = [
+          ('KNN Imputation', 'Mengisi missing values menggunakan nilai rata-rata dari k=5 tetangga terdekat yang paling mirip secara fitur.', 'bi-bandaid', 'blue'),
+          ('IQR Capping (Winsorization)', 'Mendeteksi dan membatasi outlier menggunakan metode IQR. Dipilih karena mempertahankan semua sampel.', 'bi-scissors', 'orange'),
+          ('ADASYN Oversampling', 'Mengatasi class imbalance dengan mendistribusikan data sintetis lebih banyak pada area yang sulit dipelajari.', 'bi-balance-scale', 'green'),
+          ('StandardScaler', 'Normalisasi fitur ke mean=0 dan std=1. Sangat penting untuk stabilitas model machine learning.', 'bi-rulers', 'purple'),
+          ('Hybrid AI System', 'Model XGBoost digabung dengan Rule-Based Sistem Pakar WHO untuk mencegah false positive.', 'bi-diagram-3', 'pink')
+        ] %}
+
+        {% for title, desc, icon, color in pipeline_steps %}
+        <div class="d-flex gap-3 mb-3">
+          <div class="feature-icon {{ color }} mb-0 flex-shrink-0" style="width:40px;height:40px;font-size:1rem;">
+            <i class="bi {{ icon }}"></i>
+          </div>
+          <div>
+            <h6 style="font-weight:700;margin-bottom:3px;font-size:0.9rem;">{{ title }}</h6>
+            <p style="color:var(--text-muted);font-size:0.8rem;margin:0;line-height:1.5;">{{ desc }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="col-lg-6">
+        <div class="section-badge">Dataset</div>
+        <h2 class="section-title">Informasi Dataset</h2>
+
+        <div class="glass-card">
+          <div class="glass-card-inner">
+            <div class="d-flex justify-content-between py-2 border-bottom" style="border-color:var(--glass-border) !important;">
+              <span style="color:var(--text-muted);font-size:0.875rem;">Sumber</span>
+              <a href="https://www.kaggle.com/datasets/adityakadiwal/water-potability"
+                 target="_blank" style="color:var(--primary);font-size:0.875rem;font-weight:600;">
+                Kaggle Water Potability
+              </a>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom" style="border-color:var(--glass-border) !important;">
+              <span style="color:var(--text-muted);font-size:0.875rem;">Total Sampel</span>
+              <span style="font-weight:600;font-size:0.875rem;">3,276</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom" style="border-color:var(--glass-border) !important;">
+              <span style="color:var(--text-muted);font-size:0.875rem;">Jumlah Fitur</span>
+              <span style="font-weight:600;font-size:0.875rem;">9 (semua numerik)</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom" style="border-color:var(--glass-border) !important;">
+              <span style="color:var(--text-muted);font-size:0.875rem;">Target</span>
+              <span style="font-weight:600;font-size:0.875rem;">Potability (0/1)</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom" style="border-color:var(--glass-border) !important;">
+              <span style="color:var(--text-muted);font-size:0.875rem;">Tidak Layak (0)</span>
+              <span style="font-weight:600;color:var(--danger);font-size:0.875rem;">1,998 (61%)</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom" style="border-color:var(--glass-border) !important;">
+              <span style="color:var(--text-muted);font-size:0.875rem;">Layak (1)</span>
+              <span style="font-weight:600;color:var(--success);font-size:0.875rem;">1,278 (39%)</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom" style="border-color:var(--glass-border) !important;">
+              <span style="color:var(--text-muted);font-size:0.875rem;">Training Date</span>
+              <span style="font-weight:600;font-size:0.875rem;">{{ model_info.training_date | default('N/A') }}</span>
+            </div>
+            <div class="d-flex justify-content-between py-2">
+              <span style="color:var(--text-muted);font-size:0.875rem;">Model Terbaik</span>
+              <span style="font-weight:600;color:var(--primary);font-size:0.875rem;">{{ model_info.model_name | default('N/A') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- ===== TECH STACK ===== -->
+    <div class="mb-5 reveal">
+      <div class="text-center mb-4">
+        <div class="section-badge">Stack Teknologi</div>
+        <h2 class="section-title">Teknologi yang Digunakan</h2>
+      </div>
+      <div class="row g-3">
+        {% set tech = [
+          ('Python 3.11', 'Bahasa pemrograman utama', 'bi-filetype-py', 'blue'),
+          ('Flask 3.0', 'Web framework backend', 'bi-server', 'green'),
+          ('Scikit-Learn 1.9', 'Machine Learning library', 'bi-cpu', 'orange'),
+          ('XGBoost & LightGBM', 'Gradient boosting frameworks', 'bi-lightning', 'purple'),
+          ('Imbalanced-Learn', 'SMOTE oversampling', 'bi-balance-scale', 'pink'),
+          ('Pandas & NumPy', 'Data manipulation & analytics', 'bi-table', 'teal'),
+          ('Matplotlib & Seaborn', 'Data visualization', 'bi-bar-chart', 'blue'),
+          ('Bootstrap 5', 'Frontend CSS framework', 'bi-grid', 'purple'),
+          ('SQLite (opsional)', 'Database penyimpanan lokal', 'bi-database', 'green')
+        ] %}
+        {% for name, desc, icon, color in tech %}
+        <div class="col-sm-6 col-lg-4">
+          <div class="feature-card d-flex align-items-start gap-3" style="padding:1.2rem;">
+            <div class="feature-icon {{ color }} mb-0 flex-shrink-0" style="width:40px;height:40px;font-size:1rem;">
+              <i class="bi {{ icon }}"></i>
+            </div>
+            <div>
+              <h6 style="font-weight:700;margin-bottom:3px;font-size:0.9rem;">{{ name }}</h6>
+              <p style="color:var(--text-muted);font-size:0.8rem;margin:0;">{{ desc }}</p>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ===== CTA ===== -->
+    <div class="glass-card reveal" style="background:linear-gradient(135deg,rgba(0,212,255,0.07) 0%,rgba(124,58,237,0.07) 100%);">
+      <div class="glass-card-inner text-center py-4">
+        <h3 style="font-weight:800;letter-spacing:-0.5px;margin-bottom:0.75rem;">
+          Coba Prediksi Sekarang
+        </h3>
+        <p style="color:var(--text-secondary);margin-bottom:1.5rem;font-size:0.95rem;">
+          Masukkan parameter kualitas air dan dapatkan prediksi instan.
+        </p>
+        <a href="{{ url_for('predict') }}" class="btn-primary-custom">
+          <i class="bi bi-lightning-fill"></i>
+          Buka Form Prediksi
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

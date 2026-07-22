@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Halaman Tidak Ditemukan{% endblock %}
+
+{% block content %}
+<section class="d-flex align-items-center justify-content-center" style="min-height:calc(100vh - 200px);">
+  <div class="container text-center">
+    <div class="glass-card d-inline-block reveal" style="max-width:500px;">
+      <div class="glass-card-inner py-5">
+        <div style="font-size:6rem;font-weight:900;line-height:1;margin-bottom:1rem;" class="text-gradient">404</div>
+        <h3 style="font-weight:800;margin-bottom:1rem;">Halaman Tidak Ditemukan</h3>
+        <p style="color:var(--text-secondary);margin-bottom:2rem;">
+          Maaf, halaman yang Anda cari tidak ada atau telah dipindahkan.
+        </p>
+        <a href="{{ url_for('index') }}" class="btn-primary-custom">
+          <i class="bi bi-house me-2"></i>
+          Kembali ke Beranda
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

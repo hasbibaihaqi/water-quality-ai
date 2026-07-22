@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Hasil Prediksi{% endblock %}
+
+{% block content %}
+<div class="container py-5 reveal">
+  <div class="row g-4 justify-content-center">
+    
+    <!-- LEFT COLUMN: VERDICT & RECOMMENDATIONS -->
+    <div class="col-lg-5">
+      
+      <!-- Warning Banner (If Any) -->
+      {% if result.who_validation.out_of_bounds_count > 0 %}
+      <div class="glass-card mb-4" style="border:1px solid rgba(245,158,11,0.3); background:rgba(245,158,11,0.05);">
+        <div class="glass-card-inner p-3">
+          <h6 class="text-warning mb-3 fw-bold"><i class="bi bi-exclamation-triangle me-2"></i> {{ result.who_validation.out_of_bounds_count }} Parameter di Luar Batas Aman</h6>
+          <div class="d-flex flex-wrap gap-2">
+            {% for param in result.who_validation.problematic_params %}
+            <span class="badge border border-warning text-warning bg-transparent rounded-pill px-3 py-2" style="font-weight:500;">
+              <i class="bi bi-exclamation-circle me-1"></i> {{ param.name }}
+            </span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Main Verdict Card -->
+      <div class="glass-card mb-4 text-center">
+        <div class="glass-card-inner p-4 p-xl-5">
+          <div class="result-icon-container {{ 'safe' if result.final_status.code in [1, 2] else 'unsafe' }} mx-auto mb-4" style="width:100px;height:100px;font-size:3.5rem;display:flex;align-items:center;justify-content:center;">
+            <i class="bi {{ 'bi-check-circle-fill' if result.final_status.code in [1, 2] else 'bi-x-octagon-fill' }}"></i>
+          </div>
+          
+          <h2 class="verdict-title {{ 'safe' if result.final_status.code in [1, 2] else 'unsafe' }} mb-1" style="font-size:2.2rem;font-weight:800;">
+            {{ result.final_status.text }}
+          </h2>
+          <p class="verdict-subtitle mb-5" style="color: rgba(255, 255, 255, 0.6);">
+            {{ 'Potable Water' if result.final_status.code in [1, 2] else 'Non-Potable Water' }}
+          </p>
+
+          <div class="probability-display d-flex justify-content-center align-items-center gap-4 gap-xl-5 mb-4">
+            <div class="prob-item text-center">
+              <div class="prob-ring safe mx-auto mb-2 d-flex align-items-center justify-content-center" style="width:75px;height:75px;font-size:1rem;">
+                {{ result.ml_prob_safe }}%
+              </div>
+              <div class="prob-label" style="font-size:0.8rem;color:rgba(255,255,255,0.6);">Prob. Layak</div>
+            </div>
+            <div class="divider-vertical" style="height:50px;width:1px;background:rgba(255,255,255,0.1);"></div>
+            <div class="prob-item text-center">
+              <div class="prob-ring unsafe mx-auto mb-2 d-flex align-items-center justify-content-center" style="width:75px;height:75px;font-size:1rem;">
+                {{ result.ml_prob_unsafe }}%
+              </div>
+              <div class="prob-label" style="font-size:0.8rem;color:rgba(255,255,255,0.6);">Prob. Tidak Layak</div>
+            </div>
+          </div>
+
+          <div class="text-start mt-4 pt-3 border-top" style="border-color:rgba(255,255,255,0.05) !important;">
+            <div class="d-flex justify-content-between mb-2">
+              <small style="color:rgba(255,255,255,0.6);">Tingkat Keyakinan Model</small>
+              <small style="font-weight:700;color:{{ result.confidence.color }}">{{ result.confidence.value }}%</small>
+            </div>
+            <div class="progress" style="height:6px;background:rgba(255,255,255,0.1);">
+              <div class="progress-bar" style="width:{{ result.confidence.value }}%; background-color:{{ result.confidence.color }};"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recommendations Card -->
+      <div class="glass-card mb-4" style="border:1px solid rgba(var(--bs-{{ result.risk.color }}-rgb), 0.2); background:rgba(var(--bs-{{ result.risk.color }}-rgb), 0.05);">
+        <div class="glass-card-inner p-4">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-clipboard2-check text-{{ result.risk.color }} fs-5"></i>
+            <h6 class="mb-0 text-white" style="font-weight:700;">
+              {% if result.final_status.code == 1 %} Air Aman untuk Dikonsumsi
+              {% elif result.final_status.code == 2 %} Peringatan Standar WHO
+              {% else %} Bahaya Kontaminasi!
+              {% endif %}
+            </h6>
+          </div>
+          <p style="font-size:0.9rem;color:rgba(255,255,255,0.7);">
+            {{ result.final_status.desc }}
+          </p>
+          <div class="mt-4">
+            {% for action in result.recommendations %}
+            <div class="d-flex align-items-start gap-3 mb-3">
+              <i class="bi bi-arrow-right-circle text-info mt-1"></i>
+              <span style="font-size:0.9rem;color:rgba(255,255,255,0.7);">{{ action }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex gap-3 mt-4">
+        <a href="{{ url_for('predict') }}" class="btn-custom flex-grow-1 text-center" style="padding:12px;font-size:1rem;text-decoration:none;">
+          <i class="bi bi-arrow-repeat me-2"></i> Prediksi Lagi
+        </a>
+        <a href="{{ url_for('index') }}" class="btn-outline-custom flex-grow-1 text-center" style="padding:12px;font-size:1rem;text-decoration:none;">
+          <i class="bi bi-house me-2"></i> Beranda
+        </a>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: WHO DETAILS & INPUT DATA -->
+    <div class="col-lg-7">
+      
+      <!-- Table: WHO Details -->
+      <div class="glass-card mb-4">
+        <div class="glass-card-inner p-4">
+          <div class="d-flex align-items-center gap-2 mb-4">
+            <i class="bi bi-table text-info"></i>
+            <h6 class="mb-0 text-white" style="font-weight:700;">Detail Status Parameter (vs. Standar WHO)</h6>
+          </div>
+          
+          <div class="row text-white-50 mb-2" style="font-size:0.75rem;font-weight:600;letter-spacing:1px;">
+            <div class="col-5 col-sm-6">PARAMETER</div>
+            <div class="col-3 text-end">NILAI</div>
+            <div class="col-4 col-sm-3 text-end">STATUS</div>
+          </div>
+          
+          {% for p in result.who_validation.status_list %}
+          <div class="row align-items-center py-3 border-top" style="border-color:rgba(255,255,255,0.05) !important;">
+            <div class="col-5 col-sm-6">
+              <div class="text-white" style="font-weight:600;font-size:0.95rem;">{{ p.label }}</div>
+              <div class="text-white-50" style="font-size:0.75rem;">Aman: {{ p.safe_min }} - {{ p.safe_max }} {{ p.unit }}</div>
+              
+              {% set p_width = 50 %}
+              {% if p.status == 'low' %}{% set p_width = 15 %}{% endif %}
+              {% if p.status == 'high' %}{% set p_width = 85 %}{% endif %}
+              <div class="progress mt-2" style="height:3px;background:rgba(255,255,255,0.1);max-width:200px;">
+                <div class="progress-bar {{ 'bg-success' if p.status == 'normal' else 'bg-danger' }}" style="width:{{ p_width }}%;"></div>
+              </div>
+            </div>
+            <div class="col-3 text-end text-white" style="font-weight:700;font-size:0.95rem;">
+              {{ p.value }} <span class="text-white-50 fw-normal" style="font-size:0.75rem;">{{ p.unit }}</span>
+            </div>
+            <div class="col-4 col-sm-3 text-end">
+              <span class="badge border {{ 'border-success text-success' if p.status == 'normal' else 'border-danger text-danger' }} bg-transparent rounded-pill px-2 px-sm-3 py-1" style="font-weight:600;font-size:0.7rem;">
+                <i class="bi {{ 'bi-check-circle' if p.status == 'normal' else 'bi-x-circle' }} me-1 d-none d-sm-inline"></i> 
+                {{ 'NORMAL' if p.status == 'normal' else 'TERLALU TINGGI' if p.status == 'high' else 'TERLALU RENDAH' }}
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Grid: Input Data Summary -->
+      <div class="glass-card">
+        <div class="glass-card-inner p-4">
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-bar-chart text-info"></i>
+              <h6 class="mb-0 text-white" style="font-weight:700;">Ringkasan Data Input</h6>
+            </div>
+            <span class="badge border border-info text-info rounded-pill px-3 py-1 bg-transparent"><i class="bi bi-moisture me-1"></i> Data Sampel</span>
+          </div>
+          
+          <div class="row g-3">
+            {% for p in result.who_validation.status_list %}
+            <div class="col-md-4 col-sm-6">
+              <div class="p-3 text-center h-100 d-flex flex-column justify-content-center" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:12px;">
+                <div class="text-white-50 text-uppercase mb-2" style="font-size:0.65rem;letter-spacing:1px;font-weight:600;">{{ p.label }}</div>
+                <div class="{{ 'text-success' if p.status == 'normal' else 'text-danger' }}" style="font-weight:700;font-size:1.15rem;">{{ p.value }}</div>
+                <div class="text-white-50" style="font-size:0.7rem;">{{ p.unit if p.unit else '-' }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

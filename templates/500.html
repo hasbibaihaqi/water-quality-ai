@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Terjadi Kesalahan{% endblock %}
+
+{% block content %}
+<section class="d-flex align-items-center justify-content-center" style="min-height:calc(100vh - 200px);">
+  <div class="container text-center">
+    <div class="glass-card d-inline-block reveal" style="max-width:500px; border-color:rgba(239,68,68,0.3);">
+      <div class="glass-card-inner py-5">
+        <div style="font-size:5rem;color:var(--danger);margin-bottom:1rem;">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <h3 style="font-weight:800;margin-bottom:1rem;">Kesalahan Internal Server (500)</h3>
+        <p style="color:var(--text-secondary);margin-bottom:2rem;">
+          Maaf, terjadi kesalahan pada server saat memproses permintaan Anda. 
+          Silakan coba lagi beberapa saat.
+        </p>
+        <a href="{{ url_for('index') }}" class="btn-outline-custom">
+          <i class="bi bi-arrow-left me-2"></i>
+          Kembali
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
